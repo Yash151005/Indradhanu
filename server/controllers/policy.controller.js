@@ -168,3 +168,60 @@ exports.approvePolicy = async (req, res) => {
     });
   }
 };
+
+// @desc    Update policy simulation
+// @route   PUT /api/policy/:id
+exports.updateSimulation = async (req, res) => {
+  try {
+    const simulation = await PolicySimulation.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true, runValidators: true }
+    );
+
+    if (!simulation) {
+      return res.status(404).json({
+        success: false,
+        message: 'Simulation not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Policy simulation updated successfully',
+      data: simulation
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: 'Update failed',
+      error: error.message
+    });
+  }
+};
+
+// @desc    Delete policy simulation
+// @route   DELETE /api/policy/:id
+exports.deleteSimulation = async (req, res) => {
+  try {
+    const simulation = await PolicySimulation.findByIdAndDelete(req.params.id);
+
+    if (!simulation) {
+      return res.status(404).json({
+        success: false,
+        message: 'Simulation not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Policy simulation deleted successfully'
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Delete failed',
+      error: error.message
+    });
+  }
+};

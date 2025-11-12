@@ -2,12 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { policyAPI } from '../services/api';
 import Loading from '../components/Loading';
 import ErrorMessage from '../components/ErrorMessage';
-import { DocumentTextIcon, PlayIcon } from '@heroicons/react/24/outline';
+import { DocumentTextIcon, PlayIcon, PencilIcon, TrashIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 
 const PolicySimulator = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [simulations, setSimulations] = useState([]);
+  const [editingId, setEditingId] = useState(null);
   const [newPolicy, setNewPolicy] = useState({
     policyName: '',
     domain: 'health',
@@ -63,6 +64,66 @@ const PolicySimulator = () => {
     }
   };
 
+  const deleteSimulation = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this policy simulation?')) {
+      return;
+    }
+    try {
+      await policyAPI.delete(id);
+      alert('Policy simulation deleted successfully!');
+      fetchSimulations();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const startEditing = (sim) => {
+    setEditingId(sim._id);
+    setNewPolicy({
+      policyName: sim.policyName,
+      domain: sim.domain,
+      targetRegion: sim.targetRegion,
+      description: sim.description,
+      createdBy: sim.createdBy
+    });
+  };
+
+  const cancelEditing = () => {
+    setEditingId(null);
+    setNewPolicy({
+      policyName: '',
+      domain: 'health',
+      targetRegion: '',
+      description: '',
+      createdBy: 'demo-user'
+    });
+  };
+
+  const updateSimulation = async (e) => {
+    e.preventDefault();
+    try {
+      await policyAPI.update(editingId, newPolicy);
+      alert('Policy simulation updated successfully!');
+      fetchSimulations();
+      cancelEditing();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const rerunSimulation = async (id) => {
+    if (!window.confirm('Are you sure you want to rerun this simulation? Previous results will be replaced.')) {
+      return;
+    }
+    try {
+      await policyAPI.run(id);
+      alert('Simulation rerun completed successfully!');
+      fetchSimulations();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
   if (loading) return <Loading />;
 
   return (
@@ -82,8 +143,10 @@ const PolicySimulator = () => {
 
         {/* Create New Simulation */}
         <div className="card mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Create New Policy Simulation</h2>
-          <form onSubmit={createSimulation} className="space-y-4">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">
+            {editingId ? 'Edit Policy Simulation' : 'Create New Policy Simulation'}
+          </h2>
+          <form onSubmit={editingId ? updateSimulation : createSimulation} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -136,9 +199,20 @@ const PolicySimulator = () => {
                 />
               </div>
             </div>
-            <button type="submit" className="btn-primary">
-              Create Simulation
-            </button>
+            <div className="flex space-x-3">
+              <button type="submit" className="btn-primary">
+                {editingId ? 'Update Simulation' : 'Create Simulation'}
+              </button>
+              {editingId && (
+                <button 
+                  type="button" 
+                  onClick={cancelEditing}
+                  className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+              )}
+            </div>
           </form>
         </div>
 
@@ -167,15 +241,41 @@ const PolicySimulator = () => {
                         </span>
                       </div>
                     </div>
-                    {sim.status !== 'completed' && (
+                    <div className="ml-4 flex items-center space-x-2">
+                      {sim.status !== 'completed' ? (
+                        <button
+                          onClick={() => runSimulation(sim._id)}
+                          className="flex items-center space-x-1 px-3 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+                          title="Run Simulation"
+                        >
+                          <PlayIcon className="h-4 w-4" />
+                          <span>Run</span>
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => rerunSimulation(sim._id)}
+                          className="flex items-center space-x-1 px-3 py-2 bg-ocean-600 text-white rounded-lg hover:bg-ocean-700 transition-colors"
+                          title="Rerun Simulation"
+                        >
+                          <ArrowPathIcon className="h-4 w-4" />
+                          <span>Rerun</span>
+                        </button>
+                      )}
                       <button
-                        onClick={() => runSimulation(sim._id)}
-                        className="ml-4 flex items-center space-x-2 btn-primary"
+                        onClick={() => startEditing(sim)}
+                        className="p-2 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
+                        title="Edit"
                       >
-                        <PlayIcon className="h-4 w-4" />
-                        <span>Run</span>
+                        <PencilIcon className="h-5 w-5" />
                       </button>
-                    )}
+                      <button
+                        onClick={() => deleteSimulation(sim._id)}
+                        className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Delete"
+                      >
+                        <TrashIcon className="h-5 w-5" />
+                      </button>
+                    </div>
                   </div>
                   {sim.simulationResults && (
                     <div className="mt-4 p-3 bg-gray-50 rounded">

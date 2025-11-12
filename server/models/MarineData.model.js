@@ -78,8 +78,7 @@ const MarineDataSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Geospatial index for location-based queries
-MarineDataSchema.index({ 'location.coordinates': '2dsphere' });
+// Indexes
 MarineDataSchema.index({ 'location.oceanZone': 1, timestamp: -1 });
 
 module.exports = mongoose.model('MarineData', MarineDataSchema);

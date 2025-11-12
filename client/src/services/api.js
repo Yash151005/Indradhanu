@@ -41,6 +41,8 @@ export const policyAPI = {
   getAll: (params) => api.get('/policy', { params }),
   getById: (id) => api.get(`/policy/${id}`),
   create: (data) => api.post('/policy', data),
+  update: (id, data) => api.put(`/policy/${id}`, data),
+  delete: (id) => api.delete(`/policy/${id}`),
   run: (id) => api.post(`/policy/${id}/run`),
   approve: (id) => api.put(`/policy/${id}/approve`)
 };

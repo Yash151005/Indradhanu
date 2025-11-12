@@ -5,7 +5,9 @@ const {
   createSimulation,
   runSimulation,
   getSimulationResults,
-  approvePolicy
+  approvePolicy,
+  updateSimulation,
+  deleteSimulation
 } = require('../controllers/policy.controller');
 
 // @route   GET /api/policy
@@ -32,5 +34,15 @@ router.post('/:id/run', runSimulation);
 // @desc    Approve policy
 // @access  Admin
 router.put('/:id/approve', approvePolicy);
+
+// @route   PUT /api/policy/:id
+// @desc    Update policy simulation
+// @access  Private
+router.put('/:id', updateSimulation);
+
+// @route   DELETE /api/policy/:id
+// @desc    Delete policy simulation
+// @access  Private
+router.delete('/:id', deleteSimulation);
 
 module.exports = router;
