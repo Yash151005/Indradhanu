@@ -1,23 +1,42 @@
 const MarineData = require('../models/MarineData.model');
+const { getOceanData } = require('../services/externalAPI.service');
 
 // @desc    Get all marine data
 // @route   GET /api/marine
 exports.getMarineData = async (req, res) => {
   try {
-    const { oceanZone, limit = 50 } = req.query;
-    
-    let query = {};
-    if (oceanZone) query['location.oceanZone'] = oceanZone;
+    try {
+      const { oceanZone, limit = 50 } = req.query;
+      
+      console.log('🌊 Fetching real ocean data from Open-Meteo API...');
+      
+      let marineData = await getOceanData().catch(e => {
+        console.warn('Real API failed, falling back to database:', e.message);
+        return [];
+      });
 
-    const marineData = await MarineData.find(query)
-      .sort({ timestamp: -1 })
-      .limit(parseInt(limit));
+      if (oceanZone) {
+        marineData = marineData.filter(d => d.location.oceanZone === oceanZone);
+      }
 
-    res.json({
-      success: true,
-      count: marineData.length,
-      data: marineData
-    });
+      marineData = marineData.slice(0, parseInt(limit));
+
+      res.json({
+        success: true,
+        count: marineData.length,
+        data: marineData,
+        source: 'Open-Meteo - Real-time ocean data'
+      });
+    } catch (dbError) {
+      console.warn('Database unavailable, returning empty marine data');
+      res.json({
+        success: true,
+        count: 0,
+        data: [],
+        offline: true,
+        message: 'Data source unavailable.'
+      });
+    }
   } catch (error) {
     res.status(500).json({
       success: false,
@@ -31,23 +50,29 @@ exports.getMarineData = async (req, res) => {
 // @route   GET /api/marine/ecosystem
 exports.getEcosystemStatus = async (req, res) => {
   try {
-    const ecosystemData = await MarineData.aggregate([
-      {
-        $group: {
-          _id: '$location.oceanZone',
-          avgBiodiversity: { $avg: '$ecosystemMetrics.biodiversityIndex' },
-          avgWaterTemp: { $avg: '$ecosystemMetrics.waterQuality.temperature' },
-          avgpH: { $avg: '$ecosystemMetrics.waterQuality.pH' },
-          count: { $sum: 1 }
+    let ecosystemData = [];
+    try {
+      ecosystemData = await MarineData.aggregate([
+        {
+          $group: {
+            _id: '$location.oceanZone',
+            avgBiodiversity: { $avg: '$ecosystemMetrics.biodiversityIndex' },
+            avgWaterTemp: { $avg: '$ecosystemMetrics.waterQuality.temperature' },
+            avgpH: { $avg: '$ecosystemMetrics.waterQuality.pH' },
+            count: { $sum: 1 }
+          }
         }
-      }
-    ]);
+      ]);
+    } catch (dbError) {
+      console.warn('Database unavailable - returning empty ecosystem data');
+    }
 
     res.json({
       success: true,
       data: ecosystemData
     });
   } catch (error) {
+    console.error('Error in getEcosystemStatus:', error);
     res.status(500).json({
       success: false,
       message: 'Server Error',
@@ -60,12 +85,17 @@ exports.getEcosystemStatus = async (req, res) => {
 // @route   GET /api/marine/biodiversity
 exports.getBiodiversityMetrics = async (req, res) => {
   try {
-    const biodiversityData = await MarineData.find({
-      'ecosystemMetrics.biodiversityIndex': { $exists: true }
-    })
-      .select('location ecosystemMetrics.biodiversityIndex ecosystemMetrics.speciesCount ecosystemMetrics.endangeredSpecies timestamp')
-      .sort({ timestamp: -1 })
-      .limit(30);
+    let biodiversityData = [];
+    try {
+      biodiversityData = await MarineData.find({
+        'ecosystemMetrics.biodiversityIndex': { $exists: true }
+      })
+        .select('location ecosystemMetrics.biodiversityIndex ecosystemMetrics.speciesCount ecosystemMetrics.endangeredSpecies timestamp')
+        .sort({ timestamp: -1 })
+        .limit(30);
+    } catch (dbError) {
+      console.warn('Database unavailable - returning empty biodiversity data');
+    }
 
     res.json({
       success: true,
@@ -73,6 +103,7 @@ exports.getBiodiversityMetrics = async (req, res) => {
       data: biodiversityData
     });
   } catch (error) {
+    console.error('Error in getBiodiversityMetrics:', error);
     res.status(500).json({
       success: false,
       message: 'Server Error',
