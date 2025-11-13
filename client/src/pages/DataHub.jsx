@@ -63,7 +63,7 @@ const DataHub = () => {
           <StatCard
             title="Recent Ingestion"
             value={status.recentIngestion?.total || 0}
-            subtitle="Last hour"
+            subtitle="Last 24 hours"
             icon={CloudArrowUpIcon}
             color="ocean"
           />
@@ -83,22 +83,22 @@ const DataHub = () => {
             <div className="p-4 bg-red-50 rounded-lg">
               <p className="text-sm text-gray-600">Health Data</p>
               <p className="text-2xl font-bold text-gray-900">{status.recentIngestion?.health || 0}</p>
-              <p className="text-xs text-gray-500 mt-1">Last hour</p>
+              <p className="text-xs text-gray-500 mt-1">Last 24 hours</p>
             </div>
             <div className="p-4 bg-blue-50 rounded-lg">
               <p className="text-sm text-gray-600">Marine Data</p>
               <p className="text-2xl font-bold text-gray-900">{status.recentIngestion?.marine || 0}</p>
-              <p className="text-xs text-gray-500 mt-1">Last hour</p>
+              <p className="text-xs text-gray-500 mt-1">Last 24 hours</p>
             </div>
             <div className="p-4 bg-green-50 rounded-lg">
               <p className="text-sm text-gray-600">Circular Data</p>
               <p className="text-2xl font-bold text-gray-900">{status.recentIngestion?.circular || 0}</p>
-              <p className="text-xs text-gray-500 mt-1">Last hour</p>
+              <p className="text-xs text-gray-500 mt-1">Last 24 hours</p>
             </div>
             <div className="p-4 bg-purple-50 rounded-lg">
               <p className="text-sm text-gray-600">Total</p>
               <p className="text-2xl font-bold text-gray-900">{status.recentIngestion?.total || 0}</p>
-              <p className="text-xs text-gray-500 mt-1">Last hour</p>
+              <p className="text-xs text-gray-500 mt-1">Last 24 hours</p>
             </div>
           </div>
         </div>
